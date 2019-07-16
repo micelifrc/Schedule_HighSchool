@@ -1,0 +1,44 @@
+This program will use boolean LP to create a schedule for teachers->classes in an high school.
+
+The program will be called as:
+$ ./Schedule_HighSchool.out <input.txt>
+
+And will print two files called "classes_schedule.pdf" and "teacher_schedule.txt" with the output schedule.
+
+<input.txt> will contain the following 3 types of lines:
+
+Each line starting with the character 'c' will contain an id uniquely identifying a class, then the name of the class
+(without spaces), and then the number of  hours of the class for each school day.
+For example, if the school week lasts 6 days (from Monday to Saturday), and class 5E has 6 hours on Tuesday and Friday,
+5 hours on Monday, Wednesday and Thursday, and 4 hours on Saturday, then the input.txt file will contain the following
+line:
+
+c 37 5E 5 6 5 5 6 4
+
+where 37 is an ID for class 5E.
+
+Each line starting with the character 't' will contain an id uniquely identifying a teacher, then the name of the
+teacher (without spaces), and a "penality number" for each hour of the school-weak.
+For example, if the school weak has 6 days, and each day lasts 6 hours (apart from Saturday which lasts 5), then the
+line for a teacher will look like the following:
+
+t 21 Miceli 4 0 0 0 2 5  3 0 0 0 1 4  3 0 0 0 1 4  3 0 0 0 1 4  3 0 0 0 1 4  3 0 0 0 4
+
+This denotes that the teacher Miceli has id 21. The 6+6+6+6+6+5=35 numberes that follow denotes how much the teacher
+would like to be at home in the associated hour.
+This means that Miceli would prefer not to be at school in the first and last hour of each day (and possibly also on the
+fifth hour).
+If a teacher is totally unavailable at a certain hour (for example if he is a part-timer), then he should write -1 on
+that hour. This should be confirmed by the headmaster.
+The sum of the penality numbers >= 0 must be <= 50.
+
+Each line starting with a 'q' will contain a "query" for a teacher for a class.
+The line will contain the 2 id's of the teacher and the class (teacher first), followed by the number of hours the
+teacher has in the class, and finally the number of days in which the teacher wants to have 2 consecutive hours in the
+class (for example to do written tests, or for PE teachers).
+An example of teacher Miceli for class 5E would be:
+
+q 21 37 5 1
+
+This denotes that Miceli has 5 hours with the class 5E, and wants to have 1 day with 2 consecutive hours (in order to do
+the written tests).
