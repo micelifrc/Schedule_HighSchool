@@ -18,7 +18,7 @@ c 37 5E 5 6 5 5 6 4
 where 37 is an ID for class 5E.
 
 Each line starting with the character 't' will contain an id uniquely identifying a teacher, then the name of the
-teacher (without spaces), and a "penality number" for each hour of the school-weak.
+teacher (without spaces), and a "penalty number" for each hour of the school-weak.
 For example, if the school weak has 6 days, and each day lasts 6 hours (apart from Saturday which lasts 5), then the
 line for a teacher will look like the following:
 
@@ -30,15 +30,23 @@ This means that Miceli would prefer not to be at school in the first and last ho
 fifth hour).
 If a teacher is totally unavailable at a certain hour (for example if he is a part-timer), then he should write -1 on
 that hour. This should be confirmed by the headmaster.
-The sum of the penality numbers >= 0 must be <= 50.
+The sum of the penalty numbers >= 0 must be <= 50.
 
-Each line starting with a 'q' will contain a "query" for a teacher for a class.
+Each line starting with a 'r' will contain a "requirement" for a teacher for a class.
 The line will contain the 2 id's of the teacher and the class (teacher first), followed by the number of hours the
 teacher has in the class, and finally the number of days in which the teacher wants to have 2 consecutive hours in the
 class (for example to do written tests, or for PE teachers).
 An example of teacher Miceli for class 5E would be:
 
-q 21 37 5 1
+r 21 37 5 1
 
 This denotes that Miceli has 5 hours with the class 5E, and wants to have 1 day with 2 consecutive hours (in order to do
 the written tests).
+
+
+If the name of a class or teacher contains a space, replace it with an underscore.
+For example, if the teacher is called Federico Miceli, in the <input.txt> file you will write:
+
+t 21 Federico_Miceli 4 0 0 0 2 5  3 0 0 0 1 4  3 0 0 0 1 4  3 0 0 0 1 4  3 0 0 0 1 4  3 0 0 0 4
+
+All indexes should be numbers >= 1

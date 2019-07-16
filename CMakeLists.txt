@@ -3,4 +3,4 @@ project(Schedule_HighSchool)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(Schedule_HighSchool main.cpp)
+add_executable(Schedule_HighSchool main.cpp Input.cpp)
