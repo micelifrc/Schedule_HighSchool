@@ -5,40 +5,14 @@
 #include <sstream>
 #include "Input.h"
 
-unsigned int Input::total_num_hours_in_week() {
-   unsigned int sum = 0;
-   for (unsigned int hour_in_day : NUM_HOURS_PER_DAY) {
-      sum += hour_in_day;
-   }
-   return sum;
-}
+unsigned int Input::total_num_hours_in_week = 0;
 
 Input::Input(std::istream &is) {
-   std::string line;
-   while (getline(is, line)) {
-      unsigned int first_character;
-      for (first_character = 0; first_character < line.length() and
-                                (line[first_character] == ' ' or line[first_character] == '\t' or
-                                 line[first_character] == '\n'); ++first_character) {}
-      if (first_character < line.length()) {
-         std::string input_line = line.substr(first_character, line.length() - first_character);
-         switch (input_line[0]) {
-            case Class::input_signal: {
-               add_class(input_line);
-               break;
-            }
-            case Teacher::input_signal: {
-               add_teacher(input_line);
-               break;
-            }
-            case Requirement::input_signal: {
-               add_requirement(input_line);
-               break;
-            }
-         }
-      }
-   }
+   check_nonzero_day();
+   read_file(is);
    check_indices();
+   set_allow_extra_pairs();
+   record_requirements();
 }
 
 Input::Class::Class(const std::string &input) : id{0}, num_hours_per_day{0, 0, 0, 0, 0, 0} {
@@ -48,9 +22,9 @@ Input::Class::Class(const std::string &input) : id{0}, num_hours_per_day{0, 0, 0
    if (c != input_signal) {
       throw std::logic_error("The input string for Class is not a class string");
    }
-   if (id < 0 or id >= MAX_ID) {
+   if (id <= 0 or id >= MAX_ID) {
       throw std::logic_error(
-            "The index " + std::to_string(id) + " is not allowed. Indices should be in the interval [0," +
+            "The index " + std::to_string(id) + " is not allowed. Indices should be in the interval [1," +
             std::to_string(MAX_ID) + ")");
    }
    for (unsigned int day = 0; day != NUM_DAYS_PER_WEEK; ++day) {
@@ -66,61 +40,67 @@ Input::Class::Class(const std::string &input) : id{0}, num_hours_per_day{0, 0, 0
    }
 }
 
-Input::Teacher::Teacher(const std::string &input) : id{0}, penalties(NUM_DAYS_PER_WEEK) {
+Input::Teacher::Teacher(const std::string &input) : id{0}, penalties(NUM_DAYS_PER_WEEK), num_days_available{0} {
    std::stringstream stream(input);
    char c;
    stream >> c >> id >> name;
    if (c != input_signal) {
       throw std::logic_error("The input string for Teacher is not a teacher string");
    }
-   if (id < 0 or id >= MAX_ID) {
+   if (id <= 0 or id >= MAX_ID) {
       throw std::logic_error(
-            "The index " + std::to_string(id) + " is not allowed. Indices should be in the interval [0," +
+            "The index " + std::to_string(id) + " is not allowed. Indices should be in the interval [1," +
             std::to_string(MAX_ID) + ")");
    }
    id *= MAX_ID;  // so it is different from the class id
    unsigned int sum = 0;
    for (unsigned int day = 0; day != NUM_DAYS_PER_WEEK; ++day) {
+      bool add_day = false;
       penalties[day].resize(NUM_HOURS_PER_DAY[day], 0);
       for (int &hour: penalties[day]) {
          if (stream.rdbuf()->in_avail() <= 0) {
             throw std::logic_error(
                   "Too few penalty inputs for teacher" + name + ": required " +
-                  std::to_string(total_num_hours_in_week()));
+                  std::to_string(total_num_hours_in_week));
          }
          stream >> hour;
          if (hour < 0) {
             hour = std::numeric_limits<int>::max();
          } else {
+            add_day = true;
             sum += hour;
          }
+      }
+      if (add_day) {
+         ++num_days_available;
       }
    }
    if (stream.rdbuf()->in_avail() > 0) {
       throw std::logic_error(
-            "Too many penalty inputs for teacher" + name + ": required " + std::to_string(total_num_hours_in_week()));
+            "Too many penalty inputs for teacher" + name + ": required " + std::to_string(total_num_hours_in_week));
    }
    if (sum > 50) {
       throw std::logic_error("Teacher " + name + " sum of penalties is > 50");
    }
 }
 
-Input::Requirement::Requirement(const std::string &input) : id{0}, num_hours{0}, num_days_with_cons_hours{0} {
+Input::Requirement::Requirement(const std::string &input)
+      : id{0}, num_hours{0}, num_days_with_cons_hours{0}, allow_extra_pairs{false} {
    std::stringstream stream(input);
    char c;
-   int teacher_id,  class_id;
+   int teacher_id, class_id;
    stream >> c >> teacher_id >> class_id >> num_hours;
    if (c != input_signal) {
       throw std::logic_error("The input string for Requirement is not a teacher string");
    }
-   if (teacher_id < 0 or teacher_id >= MAX_ID) {
+   if (teacher_id <= 0 or teacher_id >= MAX_ID) {
       throw std::logic_error(
-            "The index " + std::to_string(teacher_id) + " is not allowed. Indices should be in the interval [0," +
+            "The index " + std::to_string(teacher_id) + " is not allowed. Indices should be in the interval [1," +
             std::to_string(MAX_ID) + ")");
    }
-   if (class_id < 0 or class_id >= MAX_ID) {
+   if (class_id <= 0 or class_id >= MAX_ID) {
       throw std::logic_error(
-            "The index " + std::to_string(class_id) + " is not allowed. Indices should be in the interval [0," +
+            "The index " + std::to_string(class_id) + " is not allowed. Indices should be in the interval [1," +
             std::to_string(MAX_ID) + ")");
    }
    id = teacher_id * MAX_ID + class_id;
@@ -133,7 +113,6 @@ Input::Requirement::Requirement(const std::string &input) : id{0}, num_hours{0},
    if (2 * num_days_with_cons_hours > num_hours) {
       throw std::logic_error("Requirement with more consecutive days than hours");
    }
-   allow_extra_pairs = (num_hours - num_days_with_cons_hours > NUM_DAYS_PER_WEEK);
 }
 
 
@@ -153,6 +132,25 @@ const Input::Requirement *Input::find_requirement(ID requirement_id) const {
 }
 
 const Input::Requirement *Input::find_requirement(ID teacher_id, ID class_id) const {
+   return find_requirement(to_requirement_id(teacher_id, class_id));
+}
+
+Input::Class *Input::find_class(ID id) {
+   const auto &map_point = _class_id_map.find(id);
+   return map_point == _class_id_map.end() ? nullptr : &_classes[map_point->second];
+}
+
+Input::Teacher *Input::find_teacher(ID id) {
+   const auto &map_point = _teacher_id_map.find(id);
+   return map_point == _teacher_id_map.end() ? nullptr : &_teachers[map_point->second];
+}
+
+Input::Requirement *Input::find_requirement(ID requirement_id) {
+   const auto &map_point = _requirement_id_map.find(requirement_id);
+   return map_point == _requirement_id_map.end() ? nullptr : &_requirements[map_point->second];
+}
+
+Input::Requirement *Input::find_requirement(ID teacher_id, ID class_id) {
    return find_requirement(to_requirement_id(teacher_id, class_id));
 }
 
@@ -218,10 +216,14 @@ bool Input::add_requirement(const std::string &input) {
    const Requirement *other = find_requirement(new_requirement.id);
    if (other != nullptr) {
       if (other->num_hours != new_requirement.num_hours) {
-         throw std::logic_error("The number of hours for teacher " + std::to_string(new_requirement.teacher_id() / MAX_ID) + " for class " + std::to_string(new_requirement.class_id()) + " is double defined");
+         throw std::logic_error(
+               "The number of hours for teacher " + std::to_string(new_requirement.teacher_id() / MAX_ID) +
+               " for class " + std::to_string(new_requirement.class_id()) + " is double defined");
       }
       if (other->num_days_with_cons_hours != new_requirement.num_days_with_cons_hours) {
-         throw std::logic_error("The number of cons_days for teacher " + std::to_string(new_requirement.teacher_id() / MAX_ID) + " for class " + std::to_string(new_requirement.class_id()) + " is double defined");
+         throw std::logic_error(
+               "The number of cons_days for teacher " + std::to_string(new_requirement.teacher_id() / MAX_ID) +
+               " for class " + std::to_string(new_requirement.class_id()) + " is double defined");
       }
    }
    if (other == nullptr) {
@@ -230,6 +232,56 @@ bool Input::add_requirement(const std::string &input) {
       return true;
    }
    return false;
+}
+
+void Input::check_nonzero_day() const {
+   for(unsigned int day = 0 ; day != NUM_DAYS_PER_WEEK; ++day){
+      if(NUM_HOURS_PER_DAY[day] == 0) {
+         throw std::logic_error("Day has zero hours");
+      }
+      total_num_hours_in_week += NUM_HOURS_PER_DAY[day];
+   }
+}
+
+void Input::read_file(std::istream &is) {
+   std::string line;
+
+   auto cut_line_extrema = [&]() -> std::string {
+      unsigned int first_character;
+      for (first_character = 0; first_character < line.length() and
+                                (line[first_character] == ' ' or line[first_character] == '\t' or
+                                 line[first_character] == '\n'); ++first_character) {}
+      if (first_character == line.length()) {
+         return std::string();
+      }
+      unsigned int last_character = first_character;
+      for (unsigned int last_char_cand = first_character; last_char_cand != line.length(); ++last_char_cand) {
+         if (line[last_char_cand] != ' ' and line[last_char_cand] != '\t' and line[last_char_cand] != '\n') {
+            last_character = last_char_cand;
+         }
+      }
+      return line.substr(first_character, last_character + 1 - first_character);
+   };
+
+   while (getline(is, line)) {
+      std::string cut_input_line = cut_line_extrema();
+      if (not cut_input_line.empty()) {
+         switch (cut_input_line[0]) {
+            case Class::input_signal: {
+               add_class(cut_input_line);
+               break;
+            }
+            case Teacher::input_signal: {
+               add_teacher(cut_input_line);
+               break;
+            }
+            case Requirement::input_signal: {
+               add_requirement(cut_input_line);
+               break;
+            }
+         }
+      }
+   }
 }
 
 void Input::check_indices() const {
@@ -254,7 +306,7 @@ void Input::check_indices() const {
    for (const Teacher &tc: _teachers) {
       bool has_req = false;
       for (const Requirement &req: _requirements) {
-         if (req.teacher_id() == tc.id / MAX_ID) {
+         if (req.teacher_id() == tc.id) {
             has_req = true;
             break;
          }
@@ -265,27 +317,42 @@ void Input::check_indices() const {
    }
 
    for (const Requirement &req: _requirements) {
-      bool legal_id = false;
-      for (const Teacher &tc: _teachers) {
-         if (tc.id / MAX_ID == req.teacher_id()) {
-            legal_id = true;
-            break;
-         }
-      }
-      if (not legal_id) {
+      if (find_teacher(req.teacher_id()) == nullptr) {
          throw std::logic_error(
                "Requirement for teacher id " + std::to_string(req.teacher_id()) + " for non-existing teacher id");
       }
-      legal_id = false;
-      for (const Class &cl: _classes) {
-         if (cl.id == req.class_id()) {
-            legal_id = true;
-            break;
-         }
-      }
-      if (not legal_id) {
+      if (find_class(req.class_id()) == nullptr) {
          throw std::logic_error(
                "Requirement for class id " + std::to_string(req.class_id()) + " for non-existing class id");
       }
+   }
+}
+
+void Input::set_allow_extra_pairs() {
+   for (Requirement &req: _requirements) {
+      const Teacher *teacher = find_teacher(req.teacher_id());
+      if (teacher == nullptr) {
+         throw std::logic_error(
+               "The teacher " + std::to_string(req.teacher_id() / MAX_ID) + " does not exist but has request");
+      }
+      req.allow_extra_pairs = (req.num_hours - req.num_days_with_cons_hours > teacher->num_days_available);
+   }
+}
+
+void Input::record_requirements() {
+   for (unsigned int requirement_pos = 0; requirement_pos != num_requirements(); ++requirement_pos) {
+      const Requirement &requirement = _requirements[requirement_pos];
+      Teacher *teacher = find_teacher(requirement.teacher_id());
+      if (teacher == nullptr) {
+         throw std::logic_error(
+               "The teacher " + std::to_string(requirement.teacher_id() / MAX_ID) + " does not exist but has request");
+      }
+      teacher->requirements.emplace_back(requirement_pos);
+      Class *school_class = find_class(requirement.class_id());
+      if (school_class == nullptr) {
+         throw std::logic_error(
+               "The class " + std::to_string(requirement.class_id()) + " does not exist but has request");
+      }
+      school_class->requirements.emplace_back(requirement_pos);
    }
 }

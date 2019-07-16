@@ -20,7 +20,7 @@ public:
    static constexpr unsigned int NUM_DAYS_PER_WEEK = 6;
    static constexpr std::array<unsigned int, NUM_DAYS_PER_WEEK> NUM_HOURS_PER_DAY{6, 6, 6, 6, 6, 5};
 
-   static unsigned int total_num_hours_in_week();
+   static unsigned int total_num_hours_in_week;
 
    explicit Input(std::istream &is);
 
@@ -28,6 +28,7 @@ public:
       ID id;  // in interval [0, max_ID)
       std::string name;
       std::array<unsigned int, NUM_DAYS_PER_WEEK> num_hours_per_day;
+      std::vector<unsigned int> requirements;
 
       explicit Class(const std::string &input);
 
@@ -38,6 +39,8 @@ public:
       ID id;  // in interval [0, MAX_ID^2) and multiple of MAX_ID
       std::string name;
       std::vector<std::vector<int>> penalties;
+      unsigned int num_days_available;
+      std::vector<unsigned int> requirements;
 
       explicit Teacher(const std::string &input);
 
@@ -61,7 +64,7 @@ public:
 
    static ID to_requirement_id(ID teacher_id, ID class_id) { return MAX_ID * teacher_id + class_id; }
 
-   static ID to_teacher_id(ID requirement_id) { return requirement_id / MAX_ID; }
+   static ID to_teacher_id(ID requirement_id) { return requirement_id - to_class_id(requirement_id); }
 
    static ID to_class_id(ID requirement_id) { return requirement_id % MAX_ID; }
 
@@ -85,6 +88,14 @@ public:
 
    const Requirement *find_requirement(ID teacher_id, ID class_id) const;
 
+   Class *find_class(ID id);
+
+   Teacher *find_teacher(ID id);
+
+   Requirement *find_requirement(ID requirement_id);
+
+   Requirement *find_requirement(ID teacher_id, ID class_id);
+
 private:
    bool add_class(const std::string &input);
 
@@ -92,7 +103,11 @@ private:
 
    bool add_requirement(const std::string &input);
 
+   void check_nonzero_day() const;
+   void read_file(std::istream &is);
    void check_indices() const;
+   void set_allow_extra_pairs();
+   void record_requirements();
 
    std::vector<Class> _classes;
    std::vector<Teacher> _teachers;
