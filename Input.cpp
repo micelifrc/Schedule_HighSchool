@@ -82,7 +82,7 @@ Input::Teacher::Teacher(const std::string &input) : id{0}, penalties(NUM_DAYS_PE
    unsigned int sum = 0;
    for (unsigned int day = 0; day != NUM_DAYS_PER_WEEK; ++day) {
       penalties[day].resize(NUM_HOURS_PER_DAY[day], 0);
-      for (unsigned int hour: penalties[day]) {
+      for (int &hour: penalties[day]) {
          if (stream.rdbuf()->in_avail() <= 0) {
             throw std::logic_error(
                   "Too few penalty inputs for teacher" + name + ": required " +
@@ -130,7 +130,7 @@ Input::Requirement::Requirement(const std::string &input) : id{0}, num_hours{0},
    if (num_days_with_cons_hours > NUM_DAYS_PER_WEEK) {
       throw std::logic_error("Requirement with " + std::to_string(num_days_with_cons_hours) + " consecutive hours");
    }
-   if (2 * num_days_with_cons_hours > num_days_with_cons_hours) {
+   if (2 * num_days_with_cons_hours > num_hours) {
       throw std::logic_error("Requirement with more consecutive days than hours");
    }
    allow_extra_pairs = (num_hours - num_days_with_cons_hours > NUM_DAYS_PER_WEEK);
@@ -238,7 +238,7 @@ void Input::check_indices() const {
       for (unsigned int hour_in_day: cl.num_hours_per_day) {
          residual_hours += hour_in_day;
       }
-      if (residual_hours) {
+      if (residual_hours == 0) {
          throw std::logic_error("Class " + cl.name + " has 0 hours on every day");
       }
       for (const Requirement &req: _requirements) {
