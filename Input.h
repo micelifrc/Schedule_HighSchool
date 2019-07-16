@@ -15,17 +15,17 @@ struct Hour {
 
 class Input {
 public:
-   typedef int ID;
-   static constexpr int MAX_ID = 4096;
+   typedef int ID;  // identifies a teacher or a class
+   static constexpr int MAX_ID = 4096;  // 2^12;
    static constexpr unsigned int NUM_DAYS_PER_WEEK = 6;
-   static constexpr std::array<unsigned int, NUM_DAYS_PER_WEEK> NUM_HOURS_PER_DAY{6, 6, 6, 6, 6, 6};
+   static constexpr std::array<unsigned int, NUM_DAYS_PER_WEEK> NUM_HOURS_PER_DAY{6, 6, 6, 6, 6, 5};
 
    static unsigned int total_num_hours_in_week();
 
    explicit Input(std::istream &is);
 
    struct Class {
-      ID id;
+      ID id;  // in interval [0, max_ID)
       std::string name;
       std::array<unsigned int, NUM_DAYS_PER_WEEK> num_hours_per_day;
 
@@ -35,7 +35,7 @@ public:
    };
 
    struct Teacher {
-      ID id;
+      ID id;  // in interval [0, MAX_ID^2) and multiple of MAX_ID
       std::string name;
       std::vector<std::vector<int>> penalties;
 
@@ -45,22 +45,25 @@ public:
    };
 
    struct Requirement {
-      ID teacher_id;
-      ID class_id;
+      ID id;  // in interval [0, MAX_ID^2)
       unsigned int num_hours;
       unsigned int num_days_with_cons_hours;
       bool allow_extra_pairs;
 
       explicit Requirement(const std::string &input);
 
+      ID teacher_id() const { return to_teacher_id(id); }
+
+      ID class_id() const { return to_class_id(id); }
+
       static constexpr char input_signal = 'r';
    };
 
    static ID to_requirement_id(ID teacher_id, ID class_id) { return MAX_ID * teacher_id + class_id; }
 
-   static ID teacher_id(ID requirement_id) { return requirement_id / MAX_ID; }
+   static ID to_teacher_id(ID requirement_id) { return requirement_id / MAX_ID; }
 
-   static ID class_id(ID requirement_id) { return requirement_id % MAX_ID; }
+   static ID to_class_id(ID requirement_id) { return requirement_id % MAX_ID; }
 
    const std::vector<Class> classes() const { return _classes; }
 
@@ -77,6 +80,8 @@ public:
    const Class *find_class(ID id) const;
 
    const Teacher *find_teacher(ID id) const;
+
+   const Requirement *find_requirement(ID requirement_id) const;
 
    const Requirement *find_requirement(ID teacher_id, ID class_id) const;
 

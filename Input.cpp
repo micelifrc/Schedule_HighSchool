@@ -48,10 +48,10 @@ Input::Class::Class(const std::string &input) : id{0}, num_hours_per_day{0, 0, 0
    if (c != input_signal) {
       throw std::logic_error("The input string for Class is not a class string");
    }
-   if (id <= 0 or id > MAX_ID) {
+   if (id < 0 or id >= MAX_ID) {
       throw std::logic_error(
-            "The index " + std::to_string(id) + " is not allowed. Indices should be in the interval [1," +
-            std::to_string(MAX_ID));
+            "The index " + std::to_string(id) + " is not allowed. Indices should be in the interval [0," +
+            std::to_string(MAX_ID) + ")");
    }
    for (unsigned int day = 0; day != NUM_DAYS_PER_WEEK; ++day) {
       if (stream.rdbuf()->in_avail() <= 0) {
@@ -73,11 +73,12 @@ Input::Teacher::Teacher(const std::string &input) : id{0}, penalties(NUM_DAYS_PE
    if (c != input_signal) {
       throw std::logic_error("The input string for Teacher is not a teacher string");
    }
-   if (id <= 0 or id > MAX_ID) {
+   if (id < 0 or id >= MAX_ID) {
       throw std::logic_error(
-            "The index " + std::to_string(id) + " is not allowed. Indices should be in the interval [1," +
-            std::to_string(MAX_ID));
+            "The index " + std::to_string(id) + " is not allowed. Indices should be in the interval [0," +
+            std::to_string(MAX_ID) + ")");
    }
+   id *= MAX_ID;  // so it is different from the class id
    unsigned int sum = 0;
    for (unsigned int day = 0; day != NUM_DAYS_PER_WEEK; ++day) {
       penalties[day].resize(NUM_HOURS_PER_DAY[day], 0);
@@ -104,24 +105,25 @@ Input::Teacher::Teacher(const std::string &input) : id{0}, penalties(NUM_DAYS_PE
    }
 }
 
-Input::Requirement::Requirement(const std::string &input) : teacher_id{0}, class_id{0}, num_hours{0},
-                                                            num_days_with_cons_hours{0} {
+Input::Requirement::Requirement(const std::string &input) : id{0}, num_hours{0}, num_days_with_cons_hours{0} {
    std::stringstream stream(input);
    char c;
+   int teacher_id,  class_id;
    stream >> c >> teacher_id >> class_id >> num_hours;
    if (c != input_signal) {
       throw std::logic_error("The input string for Requirement is not a teacher string");
    }
-   if (teacher_id <= 0 or teacher_id > MAX_ID) {
+   if (teacher_id < 0 or teacher_id >= MAX_ID) {
       throw std::logic_error(
-            "The index " + std::to_string(teacher_id) + " is not allowed. Indices should be in the interval [1," +
-            std::to_string(MAX_ID));
+            "The index " + std::to_string(teacher_id) + " is not allowed. Indices should be in the interval [0," +
+            std::to_string(MAX_ID) + ")");
    }
-   if (class_id <= 0 or class_id > MAX_ID) {
+   if (class_id < 0 or class_id >= MAX_ID) {
       throw std::logic_error(
-            "The index " + std::to_string(class_id) + " is not allowed. Indices should be in the interval [1," +
-            std::to_string(MAX_ID));
+            "The index " + std::to_string(class_id) + " is not allowed. Indices should be in the interval [0," +
+            std::to_string(MAX_ID) + ")");
    }
+   id = teacher_id * MAX_ID + class_id;
    if (stream.rdbuf()->in_avail() > 0) {
       stream >> num_days_with_cons_hours;
    }
@@ -145,9 +147,13 @@ const Input::Teacher *Input::find_teacher(ID id) const {
    return map_point == _teacher_id_map.end() ? nullptr : &_teachers[map_point->second];
 }
 
-const Input::Requirement *Input::find_requirement(ID teacher_id, ID class_id) const {
-   const auto &map_point = _requirement_id_map.find(to_requirement_id(teacher_id, class_id));
+const Input::Requirement *Input::find_requirement(ID requirement_id) const {
+   const auto &map_point = _requirement_id_map.find(requirement_id);
    return map_point == _requirement_id_map.end() ? nullptr : &_requirements[map_point->second];
+}
+
+const Input::Requirement *Input::find_requirement(ID teacher_id, ID class_id) const {
+   return find_requirement(to_requirement_id(teacher_id, class_id));
 }
 
 bool Input::add_class(const std::string &input) {
@@ -184,7 +190,7 @@ bool Input::add_teacher(const std::string &input) {
    if (other != nullptr) {
       if (other->name != new_teacher.name) {
          throw std::logic_error("Classes " + other->name + " and " + new_teacher.name + " both have id " +
-                                std::to_string(new_teacher.id));
+                                std::to_string(new_teacher.id / MAX_ID));
       }
       for (unsigned int day = 0; day != NUM_DAYS_PER_WEEK; ++day) {
          for (unsigned int hour = 0; hour != NUM_HOURS_PER_DAY[day]; ++hour) {
@@ -209,20 +215,17 @@ bool Input::add_requirement(const std::string &input) {
       return false;
    }
    Requirement new_requirement(input);
-   const Requirement *other = find_requirement(new_requirement.teacher_id, new_requirement.class_id);
+   const Requirement *other = find_requirement(new_requirement.id);
    if (other != nullptr) {
       if (other->num_hours != new_requirement.num_hours) {
-         throw std::logic_error("The number of hours for teacher " + std::to_string(new_requirement.teacher_id)
-                                + " for class " + std::to_string(new_requirement.class_id) + " is double defined");
+         throw std::logic_error("The number of hours for teacher " + std::to_string(new_requirement.teacher_id() / MAX_ID) + " for class " + std::to_string(new_requirement.class_id()) + " is double defined");
       }
       if (other->num_days_with_cons_hours != new_requirement.num_days_with_cons_hours) {
-         throw std::logic_error("The number of cons_days for teacher " + std::to_string(new_requirement.teacher_id)
-                                + " for class " + std::to_string(new_requirement.class_id) + " is double defined");
+         throw std::logic_error("The number of cons_days for teacher " + std::to_string(new_requirement.teacher_id() / MAX_ID) + " for class " + std::to_string(new_requirement.class_id()) + " is double defined");
       }
    }
    if (other == nullptr) {
-      _requirement_id_map.emplace(to_requirement_id(new_requirement.teacher_id, new_requirement.class_id),
-                                  num_requirements());
+      _requirement_id_map.emplace(new_requirement.id, num_requirements());
       _requirements.push_back(new_requirement);
       return true;
    }
@@ -239,7 +242,7 @@ void Input::check_indices() const {
          throw std::logic_error("Class " + cl.name + " has 0 hours on every day");
       }
       for (const Requirement &req: _requirements) {
-         if (req.class_id == cl.id) {
+         if (req.class_id() == cl.id) {
             residual_hours -= req.num_hours;
          }
       }
@@ -251,7 +254,7 @@ void Input::check_indices() const {
    for (const Teacher &tc: _teachers) {
       bool has_req = false;
       for (const Requirement &req: _requirements) {
-         if (req.teacher_id == tc.id) {
+         if (req.teacher_id() == tc.id / MAX_ID) {
             has_req = true;
             break;
          }
@@ -264,25 +267,25 @@ void Input::check_indices() const {
    for (const Requirement &req: _requirements) {
       bool legal_id = false;
       for (const Teacher &tc: _teachers) {
-         if (tc.id == req.teacher_id) {
+         if (tc.id / MAX_ID == req.teacher_id()) {
             legal_id = true;
             break;
          }
       }
       if (not legal_id) {
          throw std::logic_error(
-               "Requirement for teacher id " + std::to_string(req.teacher_id) + " for non-existing teacher id");
+               "Requirement for teacher id " + std::to_string(req.teacher_id()) + " for non-existing teacher id");
       }
       legal_id = false;
       for (const Class &cl: _classes) {
-         if (cl.id == req.class_id) {
+         if (cl.id == req.class_id()) {
             legal_id = true;
             break;
          }
       }
       if (not legal_id) {
          throw std::logic_error(
-               "Requirement for class id " + std::to_string(req.class_id) + " for non-existing class id");
+               "Requirement for class id " + std::to_string(req.class_id()) + " for non-existing class id");
       }
    }
 }
