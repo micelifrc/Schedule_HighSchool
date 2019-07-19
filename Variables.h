@@ -29,22 +29,21 @@ private:
 
    void create_teacher_is_in_school_var();
 
-   void create_teacher_has_lesson_var();
-
    void create_requirement_var();
 
    void create_requirement_cons_var_from_hour();
 
    void create_requirement_cons_var();
 
+   void create_day_weight_for_class();
+
+   void create_day_weight_for_class_sorted();
+
    const Input &_input;
    std::vector<Variable> _variables;
 
    // one variable for each teacher saying whether he has classes before and after in the same day
    std::vector<std::vector<std::vector<VarID>>> _teacher_is_in_school_var;
-
-   // one variable for each teacher saying whether he will have class on a certain time
-   std::vector<std::vector<std::vector<VarID>>> _teacher_has_lesson_var;
 
    // there will be one variable for each requirement. Read as @p _requirement_var[req][day][h]
    std::vector<std::vector<std::vector<VarID>>> _requirement_var;
@@ -54,6 +53,12 @@ private:
    // Are only introduces with !req.allow_extra_pairs
    std::vector<std::vector<std::vector<VarID>>> _requirement_cons_var_from_hour;
    std::vector<std::vector<VarID>> _requirement_cons_var;
+
+   // the following are LP variables (not {0,1})
+   // there will be one variable for each class x day, measuring the weight of that day
+   std::vector<std::vector<VarID>> _day_weight_for_class;
+   // same as before, but sorted. These will appear in the weight objective, with decreasing weight (probably @p _day_weight_for_class_sorted[c][d] will have weight 1-d/(NUM_DAYS-1))
+   std::vector<std::vector<VarID>> _day_weight_for_class_sorted;
 };
 
 
