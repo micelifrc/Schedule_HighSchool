@@ -49,9 +49,10 @@ public:
 
    struct Requirement {
       ID id;  // in interval [0, MAX_ID^2)
-      unsigned int num_hours;
+      std::string lessons;
       unsigned int num_days_with_cons_hours;
       bool allow_extra_pairs;
+      double average_lesson_weight;
 
       explicit Requirement(const std::string &input);
 
@@ -60,6 +61,8 @@ public:
       ID class_id() const { return to_class_id(id); }
 
       static constexpr char input_signal = 'r';
+
+      unsigned int num_lessons() const { return lessons.length(); }
    };
 
    static ID to_requirement_id(ID teacher_id, ID class_id) { return MAX_ID * teacher_id + class_id; }
@@ -102,6 +105,8 @@ private:
    bool add_teacher(const std::string &input);
 
    bool add_requirement(const std::string &input);
+
+   static double weight_lesson(char l);  // the number is bigger the  "heavier" ie the lesson (ex. math is heavy, pe is not)
 
    void check_nonzero_day() const;
    void read_file(std::istream &is);

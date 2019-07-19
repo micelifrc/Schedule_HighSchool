@@ -85,11 +85,12 @@ Input::Teacher::Teacher(const std::string &input) : id{0}, penalties(NUM_DAYS_PE
 }
 
 Input::Requirement::Requirement(const std::string &input)
-      : id{0}, num_hours{0}, num_days_with_cons_hours{0}, allow_extra_pairs{false} {
+      : id{0}, num_days_with_cons_hours{0}, allow_extra_pairs{false}, average_lesson_weight{0.0} {
    std::stringstream stream(input);
    char c;
+   std::string s;
    int teacher_id, class_id;
-   stream >> c >> teacher_id >> class_id >> num_hours;
+   stream >> c >> teacher_id >> class_id >> s;
    if (c != input_signal) {
       throw std::logic_error("The input string for Requirement is not a teacher string");
    }
@@ -107,10 +108,26 @@ Input::Requirement::Requirement(const std::string &input)
    if (stream.rdbuf()->in_avail() > 0) {
       stream >> num_days_with_cons_hours;
    }
+   for (unsigned int idx = 0; idx != s.length(); ++idx) {
+      int counter = 0;
+      if (s[idx] >= 'A' and s[idx] <= 'Z') {
+         lessons += std::string(std::max(counter, 1), s[idx]);
+         counter = 0;
+      } else if (s[idx] >= 'a' and s[idx] <= 'z') {
+         lessons += std::string(std::max(counter, 1), s[idx] - 'a' + 'A');
+         counter = 0;
+      } else if (s[idx] >= '0' and s[idx] <= '9') {
+         counter = 10 * counter + s[idx] - '0';
+      }
+   }
+   for(char l: lessons) {
+      average_lesson_weight += weight_lesson(l);
+   }
+   average_lesson_weight /= num_lessons();
    if (num_days_with_cons_hours > NUM_DAYS_PER_WEEK) {
       throw std::logic_error("Requirement with " + std::to_string(num_days_with_cons_hours) + " consecutive hours");
    }
-   if (2 * num_days_with_cons_hours > num_hours) {
+   if (2 * num_days_with_cons_hours > num_lessons()) {
       throw std::logic_error("Requirement with more consecutive days than hours");
    }
 }
@@ -215,7 +232,7 @@ bool Input::add_requirement(const std::string &input) {
    Requirement new_requirement(input);
    const Requirement *other = find_requirement(new_requirement.id);
    if (other != nullptr) {
-      if (other->num_hours != new_requirement.num_hours) {
+      if (other->num_lessons() != new_requirement.num_lessons()) {
          throw std::logic_error(
                "The number of hours for teacher " + std::to_string(new_requirement.teacher_id() / MAX_ID) +
                " for class " + std::to_string(new_requirement.class_id()) + " is double defined");
@@ -235,8 +252,8 @@ bool Input::add_requirement(const std::string &input) {
 }
 
 void Input::check_nonzero_day() const {
-   for(unsigned int day = 0 ; day != NUM_DAYS_PER_WEEK; ++day){
-      if(NUM_HOURS_PER_DAY[day] == 0) {
+   for (unsigned int day = 0; day != NUM_DAYS_PER_WEEK; ++day) {
+      if (NUM_HOURS_PER_DAY[day] == 0) {
          throw std::logic_error("Day has zero hours");
       }
       total_num_hours_in_week += NUM_HOURS_PER_DAY[day];
@@ -295,7 +312,7 @@ void Input::check_indices() const {
       }
       for (const Requirement &req: _requirements) {
          if (req.class_id() == cl.id) {
-            residual_hours -= req.num_hours;
+            residual_hours -= req.num_lessons();
          }
       }
       if (residual_hours != 0) {
@@ -335,7 +352,7 @@ void Input::set_allow_extra_pairs() {
          throw std::logic_error(
                "The teacher " + std::to_string(req.teacher_id() / MAX_ID) + " does not exist but has request");
       }
-      req.allow_extra_pairs = (req.num_hours - req.num_days_with_cons_hours > teacher->num_days_available);
+      req.allow_extra_pairs = (req.num_lessons() - req.num_days_with_cons_hours > teacher->num_days_available);
    }
 }
 
@@ -354,5 +371,58 @@ void Input::record_requirements() {
                "The class " + std::to_string(requirement.class_id()) + " does not exist but has request");
       }
       school_class->requirements.emplace_back(requirement_pos);
+   }
+}
+
+double Input::weight_lesson(char l) {
+   switch (l) {
+      case 'A': {  // Art
+         return 1.0;
+      }
+      case 'B': {  // Other foreign language (different from English)
+         return 4.0;
+      }
+      case 'C': {  // Informatics / computer science
+         return 3.0;
+      }
+      case 'E': {  // English
+         return 4.0;
+      }
+      case 'F': {  // Philosophy
+         return 2.0;
+      }
+      case 'G': {  // Greek
+         return 5.0;
+      }
+      case 'H': {  // History
+         return 2.0;
+      }
+      case 'I': {  // Italian
+         return 3.0;
+      }
+      case 'J': {  // Gymnastic (Physical Education)
+         return 0.0;
+      }
+      case 'L': {  // Latin
+         return 5.0;
+      }
+      case 'M': {  // Mathematics
+         return 5.0;
+      }
+      case 'O': {  // Geography
+         return 2.0;
+      }
+      case 'P': {  // Physics
+         return 4.0;
+      }
+      case 'R': {  // Religion
+         return 0.0;
+      }
+      case 'S': {  // Science
+         return 2.0;
+      }
+      default: {
+         throw std::logic_error("Invalid lesson character " + std::to_string(l));
+      }
    }
 }

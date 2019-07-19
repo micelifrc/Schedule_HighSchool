@@ -24,7 +24,7 @@ line for a teacher will look like the following:
 
 t 21 Miceli 4 0 0 0 2 5  3 0 0 0 1 4  3 0 0 0 1 4  3 0 0 0 1 4  3 0 0 0 1 4  3 0 0 0 4
 
-This denotes that the teacher Miceli has id 21. The 6+6+6+6+6+5=35 numberes that follow denotes how much the teacher
+This denotes that the teacher Miceli has id 21. The 6+6+6+6+6+5=35 numbers that follow denotes how much the teacher
 would like to be at home in the associated hour.
 This means that Miceli would prefer not to be at school in the first and last hour of each day (and possibly also on the
 fifth hour).
@@ -33,15 +33,35 @@ that hour. This should be confirmed by the headmaster.
 The sum of the penalty numbers >= 0 must be <= 50.
 
 Each line starting with a 'r' will contain a "requirement" for a teacher for a class.
-The line will contain the 2 id's of the teacher and the class (teacher first), followed by the number of hours the
+The line will contain the 2 id's of the teacher and the class (teacher first), followed by a string of the lessons the
 teacher has in the class, and finally the number of days in which the teacher wants to have 2 consecutive hours in the
 class (for example to do written tests, or for PE teachers).
+The list of the lessons codes is the following:
+    A = Art
+    B = Other foreign language (different from English)
+    C = Informatics / computer science
+    E = English
+    F = Philosophy
+    G = Greek
+    H = History
+    I = Italian
+    J = Gymnastic (Physical Education)
+    L = Latin
+    M = Mathematics
+    O = Geography
+    P = Physics
+    R = Religion
+    S = Science
+In order to change the map, you need to modify the function Input::weight_lesson in Input.cpp
+
 An example of teacher Miceli for class 5E would be:
 
-r 21 37 5 1
+r 21 37 MMMMPPP 1
 
-This denotes that Miceli has 5 hours with the class 5E, and wants to have 1 day with 2 consecutive hours (in order to do
-the written tests).
+This denotes that Miceli has 7 hours with the class 5E (4 of Mathematics, 3 of Physics), and wants to have 1 day with 2
+ consecutive hours (in order to do the written tests).
+The input can also be written in the equivalent form:
+r 21 37 4M3P 1
 
 
 If the name of a class or teacher contains a space, replace it with an underscore.
