@@ -64,7 +64,7 @@ void Variables::create_requirement_var() {
 
 void Variables::create_requirement_cons_var_from_hour() {
    for (unsigned int requirement_id = 0; requirement_id != _input.num_requirements(); ++requirement_id) {
-      if(_input.requirements()[requirement_id].num_days_with_cons_hours == 0) {
+      if (_input.requirements()[requirement_id].num_days_with_cons_hours == 0) {
          continue;
       }
       for (unsigned int day = 0; day != Input::NUM_DAYS_PER_WEEK; ++day) {
@@ -79,7 +79,7 @@ void Variables::create_requirement_cons_var_from_hour() {
 
 void Variables::create_requirement_cons_var() {
    for (unsigned int requirement_id = 0; requirement_id != _input.num_requirements(); ++requirement_id) {
-      if(_input.requirements()[requirement_id].num_days_with_cons_hours == 0) {
+      if (_input.requirements()[requirement_id].num_days_with_cons_hours == 0) {
          continue;
       }
       for (unsigned int day = 0; day != Input::NUM_DAYS_PER_WEEK; ++day) {

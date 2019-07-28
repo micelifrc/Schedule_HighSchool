@@ -108,8 +108,8 @@ Input::Requirement::Requirement(const std::string &input)
    if (stream.rdbuf()->in_avail() > 0) {
       stream >> num_days_with_cons_hours;
    }
+   int counter = 0;
    for (unsigned int idx = 0; idx != s.length(); ++idx) {
-      int counter = 0;
       if (s[idx] >= 'A' and s[idx] <= 'Z') {
          lessons += std::string(std::max(counter, 1), s[idx]);
          counter = 0;

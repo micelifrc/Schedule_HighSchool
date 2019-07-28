@@ -56,13 +56,13 @@ public:
 
       explicit Requirement(const std::string &input);
 
-      ID teacher_id() const { return to_teacher_id(id); }
+      [[nodiscard]] ID teacher_id() const { return to_teacher_id(id); }
 
-      ID class_id() const { return to_class_id(id); }
+      [[nodiscard]] ID class_id() const { return to_class_id(id); }
 
       static constexpr char input_signal = 'r';
 
-      unsigned int num_lessons() const { return lessons.length(); }
+      [[nodiscard]] unsigned int num_lessons() const { return lessons.length(); }
    };
 
    static ID to_requirement_id(ID teacher_id, ID class_id) { return MAX_ID * teacher_id + class_id; }
@@ -71,17 +71,17 @@ public:
 
    static ID to_class_id(ID requirement_id) { return requirement_id % MAX_ID; }
 
-   const std::vector<Class> classes() const { return _classes; }
+   const std::vector<Class> &classes() const { return _classes; }
 
-   const std::vector<Teacher> teachers() const { return _teachers; }
+   const std::vector<Teacher> &teachers() const { return _teachers; }
 
-   const std::vector<Requirement> requirements() const { return _requirements; }
+   const std::vector<Requirement> &requirements() const { return _requirements; }
 
-   const unsigned int num_classes() const { return _classes.size(); }
+   unsigned int num_classes() const { return _classes.size(); }
 
-   const unsigned int num_teachers() const { return _teachers.size(); }
+   unsigned int num_teachers() const { return _teachers.size(); }
 
-   const unsigned int num_requirements() const { return _requirements.size(); }
+   unsigned int num_requirements() const { return _requirements.size(); }
 
    const Class *find_class(ID id) const;
 
@@ -106,12 +106,17 @@ private:
 
    bool add_requirement(const std::string &input);
 
-   static double weight_lesson(char l);  // the number is bigger the  "heavier" ie the lesson (ex. math is heavy, pe is not)
+   static double
+   weight_lesson(char l);  // the number is bigger the  "heavier" ie the lesson (ex. math is heavy, pe is not)
 
    void check_nonzero_day() const;
+
    void read_file(std::istream &is);
+
    void check_indices() const;
+
    void set_allow_extra_pairs();
+
    void record_requirements();
 
    std::vector<Class> _classes;

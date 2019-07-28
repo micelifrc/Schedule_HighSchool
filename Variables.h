@@ -20,9 +20,11 @@ public:
             var_id{var_id_}, holder_id{holder_id_}, hour(day_, hour_) {}
    };
 
-   const std::vector<Variable> &variables() const { return _variables; }
+   [[nodiscard]] const std::vector<Variable> &variables() const { return _variables; }
 
-   VarID num_var() const { return _variables.size(); }
+   [[nodiscard]] VarID num_var() const { return _variables.size(); }
+
+
 
 private:
    void reserve_containers_space();
