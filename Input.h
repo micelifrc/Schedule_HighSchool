@@ -16,6 +16,7 @@ struct Hour {
 class Input {
 public:
    typedef int ID;  // identifies a teacher or a class
+   static constexpr ID InvalidID = std::numeric_limits<ID>::max();
    static constexpr int MAX_ID = 4096;  // 2^12;
    static constexpr unsigned int NUM_DAYS_PER_WEEK = 6;
    static constexpr std::array<unsigned int, NUM_DAYS_PER_WEEK> NUM_HOURS_PER_DAY{6, 6, 6, 6, 6, 5};
@@ -36,6 +37,7 @@ public:
    };
 
    struct Teacher {
+      static constexpr int InvalidPenality = std::numeric_limits<int>::max();
       ID id;  // in interval [0, MAX_ID^2) and multiple of MAX_ID
       std::string name;
       std::vector<std::vector<int>> penalties;
@@ -43,6 +45,10 @@ public:
       std::vector<unsigned int> requirements;
 
       explicit Teacher(const std::string &input);
+
+      [[nodiscard]] bool is_available(unsigned int day, unsigned int hour) const {
+         return penalties[day][hour] != InvalidPenality;
+      }
 
       static constexpr char input_signal = 't';
    };
@@ -71,11 +77,11 @@ public:
 
    static ID to_class_id(ID requirement_id) { return requirement_id % MAX_ID; }
 
-   const std::vector<Class> &classes() const { return _classes; }
+   const std::vector<Class> &get_classes() const { return _classes; }
 
-   const std::vector<Teacher> &teachers() const { return _teachers; }
+   const std::vector<Teacher> &get_teachers() const { return _teachers; }
 
-   const std::vector<Requirement> &requirements() const { return _requirements; }
+   const std::vector<Requirement> &get_requirements() const { return _requirements; }
 
    unsigned int num_classes() const { return _classes.size(); }
 
@@ -91,9 +97,17 @@ public:
 
    const Requirement *find_requirement(ID teacher_id, ID class_id) const;
 
-   Class *find_class(ID id);
+   [[nodiscard]] ID convert_from_class_id(ID class_id) const;
 
-   Teacher *find_teacher(ID id);
+   [[nodiscard]] ID convert_from_teacher_id(ID teacher_id) const;
+
+   [[nodiscard]] ID convert_from_requirement_id(ID requirement_id) const;
+
+   [[nodiscard]] ID convert_from_requirement_id(ID teacher_id, ID class_id) const;
+
+   Class *find_class(ID class_id);
+
+   Teacher *find_teacher(ID teacher_id);
 
    Requirement *find_requirement(ID requirement_id);
 

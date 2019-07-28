@@ -65,7 +65,7 @@ Input::Teacher::Teacher(const std::string &input) : id{0}, penalties(NUM_DAYS_PE
          }
          stream >> hour;
          if (hour < 0) {
-            hour = std::numeric_limits<int>::max();
+            hour = InvalidPenality;
          } else {
             add_day = true;
             sum += hour;
@@ -152,23 +152,41 @@ const Input::Requirement *Input::find_requirement(ID teacher_id, ID class_id) co
    return find_requirement(to_requirement_id(teacher_id, class_id));
 }
 
-Input::Class *Input::find_class(ID id) {
-   const auto &map_point = _class_id_map.find(id);
-   return map_point == _class_id_map.end() ? nullptr : &_classes[map_point->second];
+Input::ID Input::convert_from_class_id(Input::ID class_id) const {
+   const auto &map_point = _class_id_map.find(class_id);
+   return map_point == _class_id_map.end() ? InvalidID : map_point->second;
 }
 
-Input::Teacher *Input::find_teacher(ID id) {
-   const auto &map_point = _teacher_id_map.find(id);
-   return map_point == _teacher_id_map.end() ? nullptr : &_teachers[map_point->second];
+Input::ID Input::convert_from_teacher_id(Input::ID teacher_id) const {
+   const auto &map_point = _teacher_id_map.find(teacher_id);
+   return map_point == _class_id_map.end() ? InvalidID : map_point->second;
+}
+Input::ID Input::convert_from_requirement_id(Input::ID requirement_id) const {
+   const auto &map_point = _requirement_id_map.find(requirement_id);
+   return map_point == _requirement_id_map.end() ? InvalidID : map_point->second;
+}
+Input::ID Input::convert_from_requirement_id(Input::ID teacher_id, Input::ID class_id) const {
+   return convert_from_requirement_id(to_requirement_id(teacher_id, class_id));
+}
+
+Input::Class *Input::find_class(ID class_id) {
+   ID vector_id = convert_from_class_id(class_id);
+   return vector_id < num_classes() ? &_classes[vector_id] : nullptr;
+}
+
+Input::Teacher *Input::find_teacher(ID teacher_id) {
+   ID vector_id = convert_from_teacher_id(teacher_id);
+   return vector_id < num_teachers() ? &_teachers[vector_id] : nullptr;
 }
 
 Input::Requirement *Input::find_requirement(ID requirement_id) {
-   const auto &map_point = _requirement_id_map.find(requirement_id);
-   return map_point == _requirement_id_map.end() ? nullptr : &_requirements[map_point->second];
+   ID vector_id = convert_from_requirement_id(requirement_id);
+   return vector_id < num_requirements() ? &_requirements[vector_id] : nullptr;
 }
 
 Input::Requirement *Input::find_requirement(ID teacher_id, ID class_id) {
-   return find_requirement(to_requirement_id(teacher_id, class_id));
+   ID vector_id = convert_from_requirement_id(teacher_id, class_id);
+   return vector_id < num_requirements() ? &_requirements[vector_id] : nullptr;
 }
 
 bool Input::add_class(const std::string &input) {
